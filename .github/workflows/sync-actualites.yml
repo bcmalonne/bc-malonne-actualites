@@ -1,0 +1,99 @@
+name: Synchroniser les actualités BC Malonne
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Télécharger le JSON depuis SharePoint via Microsoft Graph
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          SITE_ID: bcmalonne.sharepoint.com,b6d22f40-47cd-4821-81f3-afe56d76a19d,4d1e6dcf-bf2e-4ecf-932a-28738980c01f
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.parse, urllib.request, urllib.error
+          from pathlib import Path
+
+          def fetch(url, *, headers=None, data=None):
+              request = urllib.request.Request(url, headers=headers or {}, data=data)
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      return response.read()
+              except urllib.error.HTTPError as e:
+                  raise RuntimeError(f"Requête HTTP échouée ({e.code}) : {url.split('?')[0]}") from None
+
+          # Identité éphémère GitHub, sans secret client Microsoft.
+          oidc_url = os.environ['ACTIONS_ID_TOKEN_REQUEST_URL']
+          separator = '&' if '?' in oidc_url else '?'
+          assertion = json.loads(fetch(
+              oidc_url + separator + 'audience=api%3A%2F%2FAzureADTokenExchange',
+              headers={'Authorization': 'Bearer ' + os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']}
+          ))['value']
+
+          form = urllib.parse.urlencode({
+              'client_id': os.environ['AZURE_CLIENT_ID'],
+              'scope': 'https://graph.microsoft.com/.default',
+              'grant_type': 'client_credentials',
+              'client_assertion_type': 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+              'client_assertion': assertion,
+          }).encode()
+          token = json.loads(fetch(
+              f"https://login.microsoftonline.com/{os.environ['AZURE_TENANT_ID']}/oauth2/v2.0/token",
+              headers={'Content-Type': 'application/x-www-form-urlencoded'},
+              data=form,
+          ))['access_token']
+
+          graph_headers = {'Authorization': 'Bearer ' + token}
+          base = 'https://graph.microsoft.com/v1.0'
+          site_id = urllib.parse.quote(os.environ['SITE_ID'], safe=',')
+          drives = json.loads(fetch(f'{base}/sites/{site_id}/drives', headers=graph_headers))['value']
+          if not drives:
+              raise RuntimeError('Aucune bibliothèque documentaire trouvée sur le site.')
+
+          # Recherche le fichier dans chaque bibliothèque du site, sans supposer
+          # le nom localisé « Documents partagés » ou « Documents ».
+          result = None
+          for drive in drives:
+              drive_id = urllib.parse.quote(drive['id'], safe='')
+              url = f'{base}/drives/{drive_id}/root:/MaTournee/actualites.json:/content'
+              try:
+                  result = fetch(url, headers=graph_headers)
+                  print('Bibliothèque trouvée :', drive.get('name', '(sans nom)'))
+                  break
+              except RuntimeError as err:
+                  if '(404)' not in str(err):
+                      raise
+
+          if result is None:
+              raise RuntimeError('Fichier MaTournee/actualites.json introuvable dans SharePoint.')
+          items = json.loads(result.decode('utf-8-sig'))
+          if not isinstance(items, list) or not all(isinstance(item, dict) for item in items):
+              raise ValueError('Le JSON SharePoint doit être une liste d’actualités.')
+          for item in items:
+              if not all(field in item for field in ('id', 'title', 'description', 'date', 'image')):
+                  raise ValueError('Une actualité ne contient pas les cinq champs attendus.')
+          Path('actualites.json').write_text(json.dumps(items, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print(f'Synchronisation préparée : {len(items)} actualité(s).')
+          PY
+
+      - name: Publier seulement si le fichier a changé
+        run: |
+          if git diff --quiet -- actualites.json; then
+            echo "Aucune modification à publier."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add actualites.json
+          git commit -m "Synchronisation des actualités SharePoint"
+          git push
