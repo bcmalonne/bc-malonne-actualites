@@ -1,7 +1,10 @@
 name: Synchroniser les actualités BC Malonne
 
+
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '17,47 * * * *'
 
 permissions:
   id-token: write
