@@ -1,6 +1,5 @@
 name: Synchroniser les actualités BC Malonne
 
-
 on:
   workflow_dispatch:
   schedule:
@@ -9,13 +8,14 @@ on:
 permissions:
   id-token: write
   contents: write
+  pages: write
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - name: Récupérer le dépôt
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Télécharger le JSON depuis SharePoint via Microsoft Graph
         env:
@@ -100,3 +100,28 @@ jobs:
           git add actualites.json
           git commit -m "Synchronisation des actualités SharePoint"
           git push
+
+      - name: Préparer le fichier public GitHub Pages
+        run: |
+          mkdir -p _site
+          cp actualites.json _site/actualites.json
+
+      - name: Préparer l'artefact GitHub Pages
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./_site
+
+  deploy:
+    name: Publier sur GitHub Pages
+    needs: sync
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publier le JSON sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
