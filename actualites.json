@@ -1,5 +1,12 @@
 [
   {
+    "id": 3,
+    "title": "Saint-Nicolas du BC Malonne : réservez maintenant !",
+    "description": "La visite du grand saint approche !! N'oubliez pas de réserver votre repas ;)",
+    "date": "2026-11-02",
+    "image": null
+  },
+  {
     "id": 1,
     "title": "Bienvenue sur Ma tournée !",
     "description": "Bienvenue sur l'application BC Malonne – Ma tournée. Retrouvez ici les actualités du club et préparez facilement vos commandes à la buvette   ! ",
