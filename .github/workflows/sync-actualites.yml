@@ -101,10 +101,12 @@ jobs:
           git commit -m "Synchronisation des actualités SharePoint"
           git push
 
+
       - name: Préparer le fichier public GitHub Pages
         run: |
           mkdir -p _site
           cp actualites.json _site/actualites.json
+          cp -R cartes _site/cartes
 
       - name: Préparer l'artefact GitHub Pages
         uses: actions/upload-pages-artifact@v4
