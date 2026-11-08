@@ -7,6 +7,14 @@
       "title": "Test",
       "expires": "",
       "description": "ceci est un test"
+    },
+    {
+      "id": "news-1794179134957",
+      "date": "2026-11-08",
+      "image": "",
+      "title": "Test 2",
+      "expires": "",
+      "description": "Test 2"
     }
   ]
 }
