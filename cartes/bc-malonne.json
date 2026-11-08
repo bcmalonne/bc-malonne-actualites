@@ -225,6 +225,39 @@
       "order": 20
     },
     {
+      "id": "bc-tango",
+      "name": "Tango",
+      "category": "Bières",
+      "price": 2.5,
+      "subcategory": "Fût",
+      "volume": "25cl",
+      "emoji": "🍺",
+      "available": true,
+      "order": 20.1
+    },
+    {
+      "id": "bc-mazout",
+      "name": "Mazout",
+      "category": "Bières",
+      "price": 2.5,
+      "subcategory": "Fût",
+      "volume": "25cl",
+      "emoji": "🍺",
+      "available": true,
+      "order": 20.2
+    },
+    {
+      "id": "bc-panache",
+      "name": "Panaché",
+      "category": "Bières",
+      "price": 2.5,
+      "subcategory": "Fût",
+      "volume": "25cl",
+      "emoji": "🍺",
+      "available": true,
+      "order": 20.3
+    },
+    {
       "id": "bc-21",
       "name": "Hoegaarden Rosée",
       "category": "Bières",
