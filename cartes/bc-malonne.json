@@ -507,6 +507,17 @@
       "category": "Snacks",
       "available": true,
       "subcategory": ""
+    },
+    {
+      "id": "bc-mw8f6ani",
+      "name": "Eau grenadine",
+      "emoji": "💧",
+      "order": 46,
+      "price": 0,
+      "volume": "",
+      "category": "Eaux",
+      "available": true,
+      "subcategory": ""
     }
   ],
   "schema": 1,
